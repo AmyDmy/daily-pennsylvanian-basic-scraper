@@ -13,20 +13,6 @@ import bs4
 import requests
 import loguru
 
-def get_top_headline(soup, section_name):
-    """
-    Finds the first headline link following a header that contains the section name.
-    This version uses a regex to robustly match the section name in header text.
-    """
-    # Look for header tags that might contain the section name (e.g., <h2> or <h3>)
-    header = soup.find(lambda tag: tag.name in ["h2", "h3"] and 
-                       re.search(r'\b' + re.escape(section_name) + r'\b', tag.get_text(strip=True), re.IGNORECASE))
-    if header:
-        # Assume the top headline is the first <a> tag after the header
-        anchor = header.find_next("a")
-        if anchor:
-            return anchor.get_text(strip=True)
-    return ""
 
 def scrape_data_point():
     """
@@ -39,26 +25,22 @@ def scrape_data_point():
     headers = {
         "User-Agent": "cis3500-scraper"
     }
-    req = requests.get("https://www.thedp.com", headers=headers)
+    req = requests.get("https://www.thedp.com/multimedia", headers=headers)
     loguru.logger.info(f"Request URL: {req.url}")
     loguru.logger.info(f"Request status code: {req.status_code}")
 
-    # Prepare a dictionary for our sections.
-    headlines = {
-        "Featured": "",
-        "News": "",
-        "Sports": "",
-        "Opinion": ""
-    }
-
     if req.ok:
         soup = bs4.BeautifulSoup(req.text, "html.parser")
-        for section in headlines.keys():
-            headline = get_top_headline(soup, section)
-            headlines[section] = headline
-            loguru.logger.info(f"{section} headline: {headline}")
+        heading = soup.find(
+            lambda tag: tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]
+            and ("Video" in tag.get_text() or "Gallery" in tag.get_text())
+        )
+        target_element = heading.find_next("a") if heading else None
+        data_point = "" if target_element is None else target_element.get_text(strip=True)
+        loguru.logger.info(f"Data point: {data_point}")
+        return data_point
 
-    return headlines
+    return ""
 
 if __name__ == "__main__":
 
