@@ -26,13 +26,38 @@ def scrape_data_point():
     req = requests.get("https://www.thedp.com", headers=headers)
     loguru.logger.info(f"Request URL: {req.url}")
     loguru.logger.info(f"Request status code: {req.status_code}")
-
+    headlines = {
+        "Featured": "",
+        "News": "",
+        "Sports": "",
+        "Opinion": ""
+    }
     if req.ok:
         soup = bs4.BeautifulSoup(req.text, "html.parser")
-        target_element = soup.find("a", class_="frontpage-link")
-        data_point = "" if target_element is None else target_element.text
-        loguru.logger.info(f"Data point: {data_point}")
-        return data_point
+        
+        # Example selectors below:
+        # For the "Featured" section, assume the top headline is within a <section> with a unique class, e.g., "featured-section",
+        # and the headline is in an <h2> element.
+        featured = soup.select_one("section.featured-section h2")
+        headlines["Featured"] = featured.text.strip() if featured else ""
+        
+        # For the "News" section, assume a section with class "news-section" holds the headline in an <h2> element.
+        news = soup.select_one("section.news-section h2")
+        headlines["News"] = news.text.strip() if news else ""
+        
+        # For the "Sports" section, assume a section with class "sports-section" holds the headline in an <h2> element.
+        sports = soup.select_one("section.sports-section h2")
+        headlines["Sports"] = sports.text.strip() if sports else ""
+        
+        # For the "Opinion" section, assume a section with class "opinion-section" holds the headline in an <h2> element.
+        opinion = soup.select_one("section.opinion-section h2")
+        headlines["Opinion"] = opinion.text.strip() if opinion else ""
+        
+        # Log the scraped headlines for debugging
+        for section, headline in headlines.items():
+            loguru.logger.info(f"{section} headline: {headline}")
+
+    return headlines
 
 
 if __name__ == "__main__":
