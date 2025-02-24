@@ -5,6 +5,7 @@ JSON file that tracks headlines over time.
 
 import os
 import sys
+import re
 
 import daily_event_monitor
 
@@ -15,11 +16,13 @@ import loguru
 def get_top_headline(soup, section_name):
     """
     Finds the first headline link following a header that contains the section name.
+    This version uses a regex to robustly match the section name in header text.
     """
     # Look for header tags that might contain the section name (e.g., <h2> or <h3>)
-    header = soup.find(lambda tag: tag.name in ["h2", "h3"] and section_name.lower() in tag.get_text().lower())
+    header = soup.find(lambda tag: tag.name in ["h2", "h3"] and 
+                       re.search(r'\b' + re.escape(section_name) + r'\b', tag.get_text(strip=True), re.IGNORECASE))
     if header:
-        # The first <a> tag after the header is assumed to be the top headline for that section.
+        # Assume the top headline is the first <a> tag after the header
         anchor = header.find_next("a")
         if anchor:
             return anchor.get_text(strip=True)
@@ -27,10 +30,11 @@ def get_top_headline(soup, section_name):
 
 def scrape_data_point():
     """
-    Scrapes the main headline from The Daily Pennsylvanian home page.
+    Scrapes the top headlines from the "Featured", "News", "Sports", and "Opinion"
+    sections on The Daily Pennsylvanian home page.
 
     Returns:
-        str: The headline text if found, otherwise an empty string.
+        dict: A dictionary mapping each section name to its top headline text.
     """
     headers = {
         "User-Agent": "cis3500-scraper"
@@ -38,6 +42,8 @@ def scrape_data_point():
     req = requests.get("https://www.thedp.com", headers=headers)
     loguru.logger.info(f"Request URL: {req.url}")
     loguru.logger.info(f"Request status code: {req.status_code}")
+
+    # Prepare a dictionary for our sections.
     headlines = {
         "Featured": "",
         "News": "",
@@ -54,13 +60,12 @@ def scrape_data_point():
 
     return headlines
 
-
 if __name__ == "__main__":
 
-    # Setup logger to track runtime
+    # Setup logger to track runtime events.
     loguru.logger.add("scrape.log", rotation="1 day")
 
-    # Create data dir if needed
+    # Create data directory if it does not exist.
     loguru.logger.info("Creating data directory if it does not exist")
     try:
         os.makedirs("data", exist_ok=True)
@@ -68,13 +73,13 @@ if __name__ == "__main__":
         loguru.logger.error(f"Failed to create data directory: {e}")
         sys.exit(1)
 
-    # Load daily event monitor
+    # Load daily event monitor.
     loguru.logger.info("Loading daily event monitor")
     dem = daily_event_monitor.DailyEventMonitor(
         "data/daily_pennsylvanian_headlines.json"
     )
 
-    # Run scrape
+    # Run the scrape.
     loguru.logger.info("Starting scrape")
     try:
         data_point = scrape_data_point()
@@ -82,7 +87,7 @@ if __name__ == "__main__":
         loguru.logger.error(f"Failed to scrape data point: {e}")
         data_point = None
 
-    # Save data
+    # Save scraped data.
     if data_point is not None:
         dem.add_today(data_point)
         dem.save()
@@ -105,6 +110,6 @@ if __name__ == "__main__":
     with open(dem.file_path, "r") as f:
         loguru.logger.info(f.read())
 
-    # Finish
+    # Finish.
     loguru.logger.info("Scrape complete")
     loguru.logger.info("Exiting")
