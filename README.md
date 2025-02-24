@@ -135,3 +135,41 @@ But it is important to use it responsibly and ethically. Here are some guideline
 9. Document your scraping process thoroughly for replicability, transparency and accountability.
 
 10. Continuously re-evaluate your scraping program against applicable laws and ethical principles.
+
+# Scraper Modification Explanation
+
+## Overview
+In this assignment, I modified the original scraper to target the Multimedia page (https://www.thedp.com/multimedia) rather than the homepage. The goal is to extract the headline of the latest video or photo story from the Multimedia page.
+
+## Changes Made
+
+### 1. Updated Target URL
+- **Original URL:** `https://www.thedp.com`
+- **New URL:** `https://www.thedp.com/multimedia`
+- **Reason:** The Multimedia page is dedicated to video and photo content, making it the ideal source for retrieving multimedia headlines.
+
+### 2. Revised HTML Parsing Strategy
+- **Original Approach:** The original scraper searched for an element with the class `frontpage-link` on the homepage.
+- **New Approach:** 
+  - The modified scraper searches for any heading element (`h1` to `h6`) that contains the keywords "Video" or "Gallery".
+  - Once such a heading is found, it retrieves the first subsequent `<a>` element, which is assumed to represent the latest multimedia story.
+- **Reason:** The Multimedia page has a different layout compared to the homepage. By filtering headings for "Video" or "Gallery", the scraper can flexibly locate the section related to multimedia content and then capture the relevant headline.
+
+### 3. Conditional Checks and Error Handling
+- **Change:** Added checks to ensure that if the expected heading or the following `<a>` element is not found, the function returns an empty string.
+- **Reason:** This prevents the scraper from breaking if the page structure changes or if the expected elements are absent, making it more robust.
+
+### 4. Logging Enhancements
+- **Change:** Integrated logging statements to record:
+  - The request URL and status code.
+  - The extracted headline (data point).
+- **Reason:** Enhanced logging facilitates debugging and monitoring, ensuring that any issues with the scraping process can be quickly identified and addressed.
+
+## Conclusion
+These modifications adapt the scraper to work with the Multimedia page by:
+- Redirecting the target URL.
+- Using a more flexible HTML parsing strategy tailored to multimedia content.
+- Implementing robust error handling and logging.
+
+This approach ensures the scraper remains effective even if minor changes occur in the page layout, and it demonstrates an understanding of how to adapt scraping techniques to different web structures.
+
