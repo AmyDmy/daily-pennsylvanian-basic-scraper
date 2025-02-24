@@ -12,6 +12,18 @@ import bs4
 import requests
 import loguru
 
+def get_top_headline(soup, section_name):
+    """
+    Finds the first headline link following a header that contains the section name.
+    """
+    # Look for header tags that might contain the section name (e.g., <h2> or <h3>)
+    header = soup.find(lambda tag: tag.name in ["h2", "h3"] and section_name.lower() in tag.get_text().lower())
+    if header:
+        # The first <a> tag after the header is assumed to be the top headline for that section.
+        anchor = header.find_next("a")
+        if anchor:
+            return anchor.get_text(strip=True)
+    return ""
 
 def scrape_data_point():
     """
@@ -32,29 +44,12 @@ def scrape_data_point():
         "Sports": "",
         "Opinion": ""
     }
+
     if req.ok:
         soup = bs4.BeautifulSoup(req.text, "html.parser")
-        
-        # Example selectors below:
-        # For the "Featured" section, assume the top headline is within a <section> with a unique class, e.g., "featured-section",
-        # and the headline is in an <h2> element.
-        featured = soup.select_one("section.featured-section h2")
-        headlines["Featured"] = featured.text.strip() if featured else ""
-        
-        # For the "News" section, assume a section with class "news-section" holds the headline in an <h2> element.
-        news = soup.select_one("section.news-section h2")
-        headlines["News"] = news.text.strip() if news else ""
-        
-        # For the "Sports" section, assume a section with class "sports-section" holds the headline in an <h2> element.
-        sports = soup.select_one("section.sports-section h2")
-        headlines["Sports"] = sports.text.strip() if sports else ""
-        
-        # For the "Opinion" section, assume a section with class "opinion-section" holds the headline in an <h2> element.
-        opinion = soup.select_one("section.opinion-section h2")
-        headlines["Opinion"] = opinion.text.strip() if opinion else ""
-        
-        # Log the scraped headlines for debugging
-        for section, headline in headlines.items():
+        for section in headlines.keys():
+            headline = get_top_headline(soup, section)
+            headlines[section] = headline
             loguru.logger.info(f"{section} headline: {headline}")
 
     return headlines
